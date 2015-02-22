@@ -24,17 +24,27 @@ map_labels <- function (dir = "test") {
   activity <- read.table("UCI HAR Dataset/activity_labels.txt", col.names=c("label_id", "activity"))
   activity <- select(merge(activity, labels), activity, nr) # drop the label_id
   
-  # or do some magic to merge sets and labels
-  res <- merge(activity, sets, by="nr")
-  # TODO rename features and filter..
-  select(res, activity:V561) # drop nr column
+  merge(activity, sets, by="nr")
 }
 
-merge_one <- function () {
-  a <- map_labels("test")
-  b <- map_labels("train")
-  out <- rbind(a, b)
-  out
+# from the list of features only return the "mean" and "standard deviation"
+get_features <- function () {
+  f <- read.table("UCI HAR Dataset/features.txt", col.names=c("id", "name"))
+  mean_index <- grep("mean", f$name)
+  std_index <- grep("std", f$name)
+
+  f1 <- f[f$id %in% std_index | f$id %in% mean_index,]
+  f1$id <- sapply(f1$id,  function(x) paste('V', x, sep=''))
+  f1
 }
 
-dataset <- merge_one()
+filter_features <- function (data) {
+  select_(data, .dots=c("activity", features$id))
+}
+
+##### MAIN #####
+features <- get_features()
+test <- filter_features(map_labels("test"))
+
+train <- filter_features(map_labels("train"))
+out <- rbind(test, train)
