@@ -39,12 +39,20 @@ get_features <- function () {
 }
 
 filter_features <- function (data) {
-  select_(data, .dots=c("activity", features$id))
+  rename <- function(dat, oldnames, newnames) {
+    datnames <- colnames(dat)
+    datnames[which(datnames %in% oldnames)] <- newnames
+    colnames(dat) <- datnames
+    dat
+  }
+  filter = c("activity", features$id)
+  r1 <- select_(data, .dots=filter)
+  r2 <- rename(r1, filter, c("activity", as.character(features$name)))
 }
 
 ##### MAIN #####
 features <- get_features()
 test <- filter_features(map_labels("test"))
 
-train <- filter_features(map_labels("train"))
+train <- filter_features(data = map_labels("train"))
 out <- rbind(test, train)
