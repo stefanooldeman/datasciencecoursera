@@ -1,16 +1,5 @@
 library(data.table)
 library(dplyr)
-# set working directory to what you want, this tmpdir works on most linux/mac osx
-tmp_dir <- paste(Sys.getenv("HOME"), "Downloads", "tmp_ass1_data", sep=.Platform$file.sep)
-if (!file.exists(tmp_dir)) { dir.create(tmp_dir, r=TRUE) }
-setwd(tmp_dir)
-
-# downlaod the dataset
-if (!file.exists("UCI_HAR_Dataset.zip")) {
-  fileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
-  download.file(fileUrl,destfile="UCI_HAR_Dataset.zip",method="curl")
-  unzip("UCI_HAR_Dataset.zip")
-}
 
 map_labels <- function (dir = "test") { 
   set_fname <<- sprintf("UCI HAR Dataset/%s/X_%s.txt", dir, dir)
@@ -51,8 +40,33 @@ filter_features <- function (data) {
 }
 
 ##### MAIN #####
+# set working directory to what you want, this tmpdir works on most linux/mac osx
+tmp_dir <- paste(Sys.getenv("HOME"), "Downloads", "tmp_ass1_data", sep=.Platform$file.sep)
+if (!file.exists(tmp_dir)) { dir.create(tmp_dir, r=TRUE) }
+setwd(tmp_dir)
+
+# downlaod the dataset
+if (!file.exists("UCI_HAR_Dataset.zip")) {
+  fileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+  download.file(fileUrl,destfile="UCI_HAR_Dataset.zip",method="curl")
+  unzip("UCI_HAR_Dataset.zip")
+}
+
+##### MAIN: STEP 4 #####
 features <- get_features()
 test <- filter_features(map_labels("test"))
 
 train <- filter_features(data = map_labels("train"))
 out <- rbind(test, train)
+
+#### EXPORT: STEP 5 ####
+#  tidy data set with the average of each variable for each activity and each subject.
+walking <- colMeans(out[out$activity == "WALKING",2:80])
+walking_upstairs <- colMeans(out[out$activity == "WALKING_UPSTAIRS",2:80])
+walking_downstairs <- colMeans(out[out$activity == "WALKING_DOWNSTAIRS",2:80])
+sitting <- colMeans(out[out$activity == "SITTING",2:80])
+standing <- colMeans(out[out$activity == "STANDING",2:80])
+laying <- colMeans(out[out$activity == "LAYING",2:80])
+
+out2 <- cbind(walking, walking_upstairs, walking_downstairs, sitting, standing, laying)
+write.table(out2, "output_step5.txt", row.name=FALSE)
