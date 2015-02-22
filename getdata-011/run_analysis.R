@@ -1,3 +1,5 @@
+library(data.table)
+library(dplyr)
 # set working directory to what you want, this tmpdir works on most linux/mac osx
 tmp_dir <- paste(Sys.getenv("HOME"), "Downloads", "tmp_ass1_data", sep=.Platform$file.sep)
 if (!file.exists(tmp_dir)) { dir.create(tmp_dir, r=TRUE) }
@@ -10,24 +12,29 @@ if (!file.exists("UCI_HAR_Dataset.zip")) {
   unzip("UCI_HAR_Dataset.zip")
 }
 
-get_widths <- function (filename) {
-  first_line = readLines(filename, n=1)
-  bin <- sapply(strsplit(first_line, ' '), nchar)
-  ifelse(bin == 0, -1, bin)
-}
-map_labels <- function (dir) {
+map_labels <- function (dir = "test") { 
   set_fname <<- sprintf("UCI HAR Dataset/%s/X_%s.txt", dir, dir)
-  # treat vectors file as fixed width. so calc all the widths of the columns.
-  sets <- read.fwf(set_fname, widths=get_widths(set_fname))
-  labels <- readLines(sprintf("UCI HAR Dataset/%s/y_%s.txt", dir, dir))
+  sets <- data.table(read.table(set_fname, stringsAsFactors=FALSE))
+  sets$nr <- 1:nrow(sets)
+  
+  label_id <- readLines(sprintf("UCI HAR Dataset/%s/y_%s.txt", dir, dir))
+  labels <- as.data.frame(label_id)
+  labels$nr <- 1:nrow(labels)
+  
+  activity <- read.table("UCI HAR Dataset/activity_labels.txt", col.names=c("label_id", "activity"))
+  activity <- select(merge(activity, labels), activity, nr) # drop the label_id
+  
   # or do some magic to merge sets and labels
-  list(x=sets, y=labels)
+  res <- merge(activity, sets, by="nr")
+  # TODO rename features and filter..
+  select(res, activity:V561) # drop nr column
 }
 
 merge_one <- function () {
   a <- map_labels("test")
   b <- map_labels("train")
-  # merge again
+  out <- rbind(a, b)
+  out
 }
 
-"UCI HAR Dataset" sep=.Platform$file.sep
+dataset <- merge_one()
