@@ -19,8 +19,8 @@ map_labels <- function (dir = "test") {
 # from the list of features only return the "mean" and "standard deviation"
 get_features <- function () {
   f <- read.table("UCI HAR Dataset/features.txt", col.names=c("id", "name"))
-  mean_index <- grep("mean", f$name)
-  std_index <- grep("std", f$name)
+  mean_index <- grep("mean", f$name, ignore.case=TRUE)
+  std_index <- grep("std", f$name, ignore.case=TRUE)
 
   f1 <- f[f$id %in% std_index | f$id %in% mean_index,]
   f1$id <- sapply(f1$id,  function(x) paste('V', x, sep=''))
